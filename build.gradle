@@ -1,3 +1,5 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
 buildscript {
 	ext {
 		springBootVersion = '2.1.2.RELEASE'
@@ -17,6 +19,56 @@ apply plugin: 'io.spring.dependency-management'
 group = 'ru.yandex.lc.chatw'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '1.8'
+
+task buildJS() {
+	doLast {
+		def feApps = [
+				'frontend': './build/resources/main/public/'
+		]
+		def shell = 'sh'
+		def shellSwitch = '-c'
+		if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+			shell = 'cmd'
+			shellSwitch = '/c'
+		}
+		feApps.keySet().each { app ->
+			println "---\nBuilding JS app : ${app} to ${feApps[app]}\n---"
+			ant.uptodate(
+					property: "build_${app}",
+					value: 'up-to-date',
+					targetfile: "${feApps[app]}/index.html") {
+				srcfiles(dir: "./${app}/src/")
+			}
+			println "Build flag:" + ant.antProject.properties."build_${app}"
+			if (ant.antProject.properties."build_${app}" == 'up-to-date') {
+				println "Skipping ${app} build"
+			} else {
+				println "Building ${app}"
+				ant.exec(
+						executable: shell,
+						dir: "./${app}",
+						failonerror: 'true',
+						outputproperty: 'jsout') {
+					arg(line: shellSwitch + ' "npm run build"')
+				}
+				println "Build log:" + ant.antProject.properties.jsout
+				println "Copying ./${app}/build/ to ${feApps[app]}"
+				ant.mkdir(dir: "${feApps[app]}")
+				ant.copy(todir: "${feApps[app]}", includeEmptyDirs: 'true', overwrite: 'true') {
+					fileset(dir: "./${app}/build/")
+				}
+			}
+		}
+	}
+}
+
+processResources.doLast {
+	buildJS.execute();
+}
+
+bootRun.doFirst {
+	buildJS.execute();
+}
 
 repositories {
 	mavenCentral()
