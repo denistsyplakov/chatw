@@ -24,3 +24,7 @@
 /dist/
 /nbdist/
 /.nb-gradle/
+
+### Frontend ###
+package-lock.json
+/frontend/node_modules/
