@@ -1,5 +1,5 @@
 {
-  "name": "my-app",
+  "name": "chatw",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -8,6 +8,8 @@
     "@types/react": "16.7.22",
     "@types/react-dom": "16.0.11",
     "@types/stompjs": "^2.3.4",
+    "@types/sockjs-client": "^1.1.0",
+    "sockjs-client": "^1.3.0",
     "stompjs": "^2.3.3",
     "react": "^16.7.0",
     "react-dom": "^16.7.0",

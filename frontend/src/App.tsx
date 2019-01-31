@@ -2,36 +2,58 @@ import React, {Component} from 'react';
 import logo from './logo.svg';
 import './App.css';
 import * as Stomp from 'stompjs';
+import SockJS from 'sockjs-client';
+import {Client} from "stompjs";
 
-class App extends Component {
+interface AppState {
+    messages: string[] | null,
+}
+
+interface AppProps {
+}
+
+class App extends Component<AppProps, AppState> {
+
+    state: AppState = {
+        messages: new Array<string>(),
+    };
+
+    private client: Client;
+
+    public componentWillMount() {
+        this.setState({messages: new Array<string>()});
+    }
 
     constructor(props: any) {
         super(props);
-        this.initStomp();
+
+        // init stomp
+        const socket = new SockJS('/ws-main'); // http://localhost:8080/ws-main
+        this.client = Stomp.over(socket);
+        this.client.connect({},
+            (frame) => {
+                console.log("Connected", frame);
+                this.client.subscribe("/topic/greetings", (greeting) => {
+                    console.log(greeting);
+                    const msg = this.state["messages"];
+                    msg.push(JSON.parse(greeting.body).content);
+                    this.setState({messages: msg,});
+                });
+                this.client.send("/app/hello", {}, JSON.stringify({'name': 'The name'}));
+            }
+        );
+
     }
 
-    private initStomp() {
-        const client = Stomp.over(new WebSocket('ws://localhost/ws-main'));
-        client.connect({}, () => { });
-    }
 
     render() {
+        const {messages} = this.state;
         return (
             <div className="App">
-                <header className="App-header">
-                    <img src={logo} className="App-logo" alt="logo"/>
-                    <p>
-                        Edit <code>src/App.tsx</code> and save to reload.
-                    </p>
-                    <a
-                        className="App-link"
-                        href="https://reactjs.org"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Learn React
-                    </a>
-                </header>
+                Application
+                <div>
+                    {messages}
+                </div>
             </div>
         );
     }
