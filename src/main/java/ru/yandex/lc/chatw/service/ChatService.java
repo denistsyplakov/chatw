@@ -145,11 +145,21 @@ public class ChatService {
     /**
      * Attempts to join chat with the given room uuid
      *
-     * @param roomUUID room uuid
+     * @param roomUUID  room uuid
+     * @param sessionId id of a user who joins chat
      * @return true if user joined chat, false if room with the given uuid does not exists.
      */
-    public synchronized boolean joinChatRoom(String roomUUID) {
-        throw new RuntimeException();
+    public synchronized boolean joinChatRoom(String sessionId, String roomUUID) {
+        var room = chatRooms.get(roomUUID);
+        if (room == null) {
+            return false;
+        }
+        var u = sessionMap.get(sessionId);
+        if (u == null) {
+            return false;
+        }
+        room.users.add(u);
+        return true;
     }
 
     /**
@@ -159,8 +169,17 @@ public class ChatService {
      * @return true if user has left chat, false if room with the given uuid does not exists or user was not member
      * of this chat.
      */
-    public synchronized boolean leaveChatRoom(String roomUUID) {
-        throw new RuntimeException();
+    public synchronized boolean leaveChatRoom(String sessionId, String roomUUID) {
+        var u = sessionMap.get(sessionId);
+        if (u == null) {
+            return false;
+        }
+        var room = chatRooms.get(roomUUID);
+        if (room == null) {
+            return false;
+        }
+        room.users.remove(u);
+        return true;
     }
 
 }
