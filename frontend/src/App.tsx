@@ -33,12 +33,19 @@ class App extends Component<AppProps, AppState> {
         this.client.connect({},
             (frame) => {
                 console.log("Connected", frame);
+                var sessionId = /\/([^\/]+)\/websocket/.exec(socket["_transport"]["url"])[1];
+                console.log("SessionId", sessionId);
                 this.client.subscribe("/topic/greetings", (greeting) => {
                     console.log(greeting);
                     const msg = this.state["messages"];
                     msg.push(JSON.parse(greeting.body).content);
                     this.setState({messages: msg,});
                 });
+
+                this.client.subscribe(`/topic/u-${sessionId}`, (msg) => {
+                    console.log(msg);
+                });
+
                 this.client.send("/app/hello", {}, JSON.stringify({'name': 'The name'}));
             }
         );
