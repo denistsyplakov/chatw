@@ -143,13 +143,13 @@ public class ChatService {
     }
 
     /**
-     * Attempts to join chat with the given room uuid
+     * Attempts to join or leave chat with the given room uuid
      *
      * @param roomUUID  room uuid
-     * @param sessionId id of a user who joins chat
-     * @return true if user joined chat, false if room with the given uuid does not exists.
+     * @param sessionId id of a user who joins/leaves chat
+     * @return true if operation performed, false if room with the given uuid does not exists or user was not found.
      */
-    public synchronized boolean joinChatRoom(String sessionId, String roomUUID) {
+    public synchronized boolean joinLeaveChatRoom(String sessionId, String roomUUID, RoomAction action) {
         var room = chatRooms.get(roomUUID);
         if (room == null) {
             return false;
@@ -158,28 +158,24 @@ public class ChatService {
         if (u == null) {
             return false;
         }
-        room.users.add(u);
+        switch (action) {
+            case JOIN: {
+                room.users.add(u);
+                break;
+            }
+            case LEAVE: {
+                room.users.remove(u);
+                break;
+            }
+            default:
+                throw new IllegalStateException(action + "");
+        }
         return true;
     }
 
-    /**
-     * Attempts to remove user from chat room with the given room uuid
-     *
-     * @param roomUUID room uuid
-     * @return true if user has left chat, false if room with the given uuid does not exists or user was not member
-     * of this chat.
-     */
-    public synchronized boolean leaveChatRoom(String sessionId, String roomUUID) {
-        var u = sessionMap.get(sessionId);
-        if (u == null) {
-            return false;
-        }
-        var room = chatRooms.get(roomUUID);
-        if (room == null) {
-            return false;
-        }
-        room.users.remove(u);
-        return true;
+    public enum RoomAction {
+        LEAVE,
+        JOIN
     }
 
 }
