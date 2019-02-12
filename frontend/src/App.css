@@ -1,4 +1,31 @@
 .App {
-  text-align: center;
+  display: grid;
+  grid-template-columns: auto 150px;
+  grid-template-rows: 50px auto 50px;
+  height: 100%;
+
 }
 
+.widget{
+  border: 1px solid silver;
+}
+
+#w-header {
+  grid-column: 1 / span 2;
+  grid-row: 1;
+}
+
+#w-messages {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+#w-users {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+#w-input {
+  grid-column: 1 / span 2;
+  grid-row: 3;
+}

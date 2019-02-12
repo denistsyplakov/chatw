@@ -10,9 +10,10 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.util.HtmlUtils;
-import ru.yandex.lc.chatw.dto.Greeting;
-import ru.yandex.lc.chatw.dto.HelloMessage;
+import ru.yandex.lc.chatw.dto.*;
+import ru.yandex.lc.chatw.service.ChatService;
 
+import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -21,34 +22,37 @@ public class WSHandler {
 
     Logger log = LoggerFactory.getLogger(WSHandler.class);
 
+    private final SimpMessagingTemplate smt;
+
+    private final ChatService chat;
+
     @Autowired
-    private SimpMessagingTemplate smt;
-
-    private Timer tm = new Timer();
-
-    @MessageMapping("/hello")
-    @SendTo("/topic/greetings")
-    public Greeting greeting(@Header("simpSessionId") String sessionId, HelloMessage message) throws Exception {
-        log.info("Message from {}", sessionId);
-        log.info("tpl {}",smt);
-        tm.schedule(new TmpTimerTask(sessionId),1000 );
-        smt.convertAndSend("/topic/greetings",new Greeting("TTTT"));
-        return new Greeting("Hello, " + HtmlUtils.htmlEscape(message.name) + "!");
+    public WSHandler(ChatService chat, SimpMessagingTemplate smt) {
+        this.chat = chat;
+        this.smt = smt;
     }
 
-    class TmpTimerTask extends TimerTask{
-
-        private String sessionId;
-
-        public TmpTimerTask(String sessionId) {
-            this.sessionId = sessionId;
+    @MessageMapping("/set-name")
+    public void setName(@Header("simpSessionId") String sessionId, CommandSetName cmd) {
+        if (chat.tryToClaimUserName(sessionId, cmd.name)) {
+            sendReplyToUser(sessionId, ServerReply.okReply());
+        } else {
+            sendReplyToUser(sessionId, new ServerReply(ServerReply.Status.NOT_OK, "Name is already taken."));
         }
+    }
 
-        @Override
-        public void run() {
-            log.info("Sending tmpt");
-            smt.convertAndSend("/topic/u-" + sessionId , new Greeting("QQQ"));
-        }
+    @MessageMapping("/create-room")
+    public void createRoom(@Header("simpSessionId") String sessionId, CommandCreateChatRom cmd) {
+        Optional.of(chat.createChatRoom(sessionId, cmd.roomName)).ifPresentOrElse(
+                (ruuid) -> sendReplyToUser(sessionId, ServerReply.okReply(ruuid)),
+                ()-> sendReplyToUser(sessionId, new ServerReply(
+                        ServerReply.Status.NOT_OK,
+                        "Can not create the room."))
+        );
+    }
+
+    private void sendReplyToUser(String sessionId, ServerReply reply) {
+        smt.convertAndSend("/topic/u-" + sessionId, reply);
     }
 
 }
