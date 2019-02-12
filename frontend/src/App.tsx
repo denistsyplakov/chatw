@@ -29,37 +29,34 @@ class App extends Component<AppProps, AppState> {
     constructor(props: any) {
         super(props);
 
-        // init stomp
-        /*        const socket = new SockJS('/ws-main'); // http://localhost:8080/ws-main
-                this.client = Stomp.over(socket);
-                this.client.connect({},
-                    (frame) => {
-                        console.log("Connected", frame);
-                        var sessionId = /\/([^\/]+)\/websocket/.exec(socket["_transport"]["url"])[1];
-                        console.log("SessionId", sessionId);
-                        this.client.subscribe("/topic/greetings", (greeting) => {
-                            console.log(greeting);
-                            const msg = this.state["messages"];
-                            msg.push(JSON.parse(greeting.body).content);
-                            this.setState({messages: msg,});
-                        });
+        // init stomp, create chanel
+        const socket = new SockJS('/ws-main');
+        this.client = Stomp.over(socket);
+        this.client.connect({},
+            (frame) => {
+                console.log("Connected", frame);
+                const url = socket["_transport"]["url"];
+                const sessionId = url.split('/')[5];
+                console.log("SessionId", sessionId);
 
-                        this.client.subscribe(`/topic/u-${sessionId}`, (msg) => {
-                            console.log(msg);
-                        });
+                this.client.subscribe(`/topic/u-${sessionId}`, (msg) => {
+                    this.onMessage(msg);
+                });
 
-                        this.client.send("/app/hello", {}, JSON.stringify({'name': 'The name'}));
-                    }
-                );*/
+            }
+        );
 
     }
 
+    onMessage(msg: any): void {
+        console.log(msg);
+    }
 
     render() {
-        const {messages} = this.state;
+        const {messages, name} = this.state;
 
-        return (
-            <div className="App">
+        const chatLayout =
+            <div id="ChatLayout">
                 <div id="w-header" className="widget">
                     header
                 </div>
@@ -72,8 +69,20 @@ class App extends Component<AppProps, AppState> {
                 <div id="w-input" className="widget">
                     input
                 </div>
-            </div>
-        );
+            </div>;
+
+        const setNameLayout =
+            <div>
+                first you need to set your name: &nbsp;
+                <input/>
+                <button>Set</button>
+            </div>;
+
+        if (name === null) {
+            return setNameLayout;
+        } else {
+            return chatLayout;
+        }
     }
 }
 

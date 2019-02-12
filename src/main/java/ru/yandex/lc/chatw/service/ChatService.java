@@ -59,6 +59,9 @@ public class ChatService {
      * @param id sessionId
      */
     public synchronized void removeSession(String id) {
+        if (id == null) {
+            return;
+        }
         Optional.of(sessionMap.remove(id))
                 .ifPresent((val) -> {
                     Optional.of(val.userName).ifPresent(userNames::remove);
