@@ -34,20 +34,25 @@ public class WSHandler {
 
     @MessageMapping("/set-name")
     public void setName(@Header("simpSessionId") String sessionId, CommandSetName cmd) {
+        log.info("Set name:" + cmd);
         if (chat.tryToClaimUserName(sessionId, cmd.name)) {
-            sendReplyToUser(sessionId, ServerReply.okReply());
+            sendReplyToUser(sessionId, ServerReply.okReply(CommandSetName.class.getSimpleName()));
         } else {
-            sendReplyToUser(sessionId, new ServerReply(ServerReply.Status.NOT_OK, "Name is already taken."));
+            sendReplyToUser(sessionId, new ServerReply(
+                    ServerReply.Status.NOT_OK,
+                    "Name is already taken.",
+                    CommandSetName.class.getSimpleName()));
         }
     }
 
     @MessageMapping("/create-room")
     public void createRoom(@Header("simpSessionId") String sessionId, CommandCreateChatRom cmd) {
-        Optional.of(chat.createChatRoom(sessionId, cmd.roomName)).ifPresentOrElse(
+        Optional.ofNullable(chat.createChatRoom(sessionId, cmd.roomName))
+                .ifPresentOrElse(
                 (ruuid) -> sendReplyToUser(sessionId, ServerReply.okReply(ruuid)),
-                ()-> sendReplyToUser(sessionId, new ServerReply(
+                () -> sendReplyToUser(sessionId, new ServerReply(
                         ServerReply.Status.NOT_OK,
-                        "Can not create the room."))
+                        "Can not create the room.",CommandCreateChatRom.class.getSimpleName()))
         );
     }
 

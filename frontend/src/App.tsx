@@ -7,7 +7,9 @@ import {Client} from "stompjs";
 
 interface AppState {
     messages: string[] | null,
-    name: string,
+    username: string,
+    nameIsSet: boolean,
+    connectionEstablished : boolean,
 }
 
 interface AppProps {
@@ -22,7 +24,9 @@ class App extends Component<AppProps, AppState> {
     public componentWillMount() {
         this.setState({
             messages: new Array<string>(),
-            name: null,
+            username: "",
+            nameIsSet: false,
+            connectionEstablished : false,
         });
     }
 
@@ -42,18 +46,44 @@ class App extends Component<AppProps, AppState> {
                 this.client.subscribe(`/topic/u-${sessionId}`, (msg) => {
                     this.onMessage(msg);
                 });
-
+                this.setState({connectionEstablished:true});
             }
         );
 
+        this.handleNameChange = this.handleNameChange.bind(this);
+        this.handleNameSubmit = this.handleNameSubmit.bind(this);
+
+    }
+
+    handleNameChange(event) {
+        this.setState({username: event.target.value});
+    }
+
+    handleNameSubmit(event) {
+        event.preventDefault();
+        console.log('Submitting username: ' + this.state.username);
+        this.client.send("/app/set-name", {}, JSON.stringify({'name': this.state.username}));
     }
 
     onMessage(msg: any): void {
+        const data = JSON.parse(msg.body);
+        if (data.command == 'CommandSetName') {
+            if (data.status === 'OK') {
+                console.log("Name is successfully set");
+                this.setState({nameIsSet: true});
+            } else {
+                alert(`Can not set the name ${data.error}`);
+            }
+        }else{
+            console.log(`Reply to unknown command ${data.command}`);
+        }
         console.log(msg);
     }
 
     render() {
-        const {messages, name} = this.state;
+        const {messages, username, nameIsSet,connectionEstablished} = this.state;
+
+        const connecting = <div>Connecting to the server</div>;
 
         const chatLayout =
             <div id="ChatLayout">
@@ -73,15 +103,21 @@ class App extends Component<AppProps, AppState> {
 
         const setNameLayout =
             <div>
-                first you need to set your name: &nbsp;
-                <input/>
-                <button>Set</button>
+                <form onSubmit={this.handleNameSubmit}>
+                    First, you need to set your name: &nbsp;
+                    <input type="text" value={this.state.username} onChange={this.handleNameChange}/>
+                    <button>Set</button>
+                </form>
             </div>;
 
-        if (name === null) {
-            return setNameLayout;
-        } else {
-            return chatLayout;
+        if (connectionEstablished) {
+            if (nameIsSet) {
+                return chatLayout;
+            } else {
+                return setNameLayout;
+            }
+        }else{
+            return connecting;
         }
     }
 }

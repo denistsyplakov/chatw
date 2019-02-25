@@ -62,9 +62,9 @@ public class ChatService {
         if (id == null) {
             return;
         }
-        Optional.of(sessionMap.remove(id))
+        Optional.ofNullable(sessionMap.remove(id))
                 .ifPresent((val) -> {
-                    Optional.of(val.userName).ifPresent(userNames::remove);
+                    Optional.ofNullable(val.userName).ifPresent(userNames::remove);
                     chatRooms.values().forEach((room) -> {
                         room.users.remove(val);
                         if (room.users.size() == 0) {
