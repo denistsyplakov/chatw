@@ -77,7 +77,7 @@ class App extends Component<AppProps, AppState> {
         }else{
             console.log(`Reply to unknown command ${data.command}`);
         }
-        console.log(msg);
+        console.log(`Procesed message ${msg}`);
     }
 
     render() {
